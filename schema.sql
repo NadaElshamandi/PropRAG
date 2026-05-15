@@ -279,6 +279,56 @@ CREATE POLICY "service role full access" ON scrape_logs FOR ALL USING (TRUE);
 CREATE POLICY "service role full access" ON user_notes  FOR ALL USING (TRUE);
 
 
+-- ── 10. Vector search function ──────────────────────────────
+-- Hybrid vector + metadata search via pgvector.
+-- Call from Python: supabase.rpc('search_listings', params).execute()
+CREATE OR REPLACE FUNCTION search_listings(
+    query_embedding vector(1536),
+    match_threshold float,
+    match_count int,
+    filter_district text DEFAULT NULL,
+    min_price int DEFAULT NULL,
+    max_price int DEFAULT NULL,
+    min_bedrooms int DEFAULT NULL
+)
+RETURNS TABLE (
+    id uuid,
+    title text,
+    description text,
+    price_egp int,
+    area_sqm float,
+    bedrooms int,
+    bathrooms int,
+    district text,
+    similarity float
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        l.id,
+        l.title,
+        l.description,
+        l.price_egp,
+        l.area_sqm,
+        l.bedrooms,
+        l.bathrooms,
+        loc.district,
+        1 - (l.embedding <=> query_embedding) AS similarity
+    FROM listings l
+    LEFT JOIN locations loc ON loc.listing_id = l.id
+    WHERE l.status = 'active'
+      AND l.embedding IS NOT NULL
+      AND (1 - (l.embedding <=> query_embedding)) > match_threshold
+      AND (filter_district IS NULL OR loc.district = filter_district)
+      AND (min_price IS NULL OR l.price_egp >= min_price)
+      AND (max_price IS NULL OR l.price_egp <= max_price)
+      AND (min_bedrooms IS NULL OR l.bedrooms >= min_bedrooms)
+    ORDER BY l.embedding <=> query_embedding
+    LIMIT match_count;
+END;
+$$ LANGUAGE plpgsql;
+
+
 -- ── Done ─────────────────────────────────────────────────────
 -- Verify everything was created:
 SELECT table_name FROM information_schema.tables
