@@ -11,12 +11,10 @@ To run:
 
 import asyncio
 from prefect import flow, task, get_run_logger
-from prefect.schedules import IntervalSchedule
-from datetime import timedelta
 
-from propertyfinder_scraper import PropertyFinderScraper
-from aqarmap_scraper import AqarmapScraper
-from dubizzle_scraper import DubizzleScraper
+from scrapers.propertyfinder_scraper import PropertyFinderScraper
+from scrapers.aqarmap_scraper import AqarmapScraper
+from scrapers.dubizzle_scraper import DubizzleScraper
 
 
 # ── Tasks (one per scraper) ──────────────────────────────────────────────────

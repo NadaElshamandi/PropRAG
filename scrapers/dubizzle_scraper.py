@@ -16,7 +16,7 @@ from typing import Optional
 
 from playwright.async_api import async_playwright, Page, ElementHandle
 
-from base_scraper import BaseScraper
+from scrapers.base_scraper import BaseScraper
 
 
 class DubizzleScraper(BaseScraper):
