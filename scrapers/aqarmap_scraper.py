@@ -14,7 +14,7 @@ import asyncio
 import re
 from typing import Optional
 
-from playwright.async_api import async_playwright, Page, ElementHandle
+from playwright.async_api import ElementHandle, Page, async_playwright
 
 from scrapers.base_scraper import BaseScraper
 

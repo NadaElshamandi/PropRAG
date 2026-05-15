@@ -10,12 +10,12 @@ To run:
 """
 
 import asyncio
-from prefect import flow, task, get_run_logger
 
-from scrapers.propertyfinder_scraper import PropertyFinderScraper
+from prefect import flow, get_run_logger, task
+
 from scrapers.aqarmap_scraper import AqarmapScraper
 from scrapers.dubizzle_scraper import DubizzleScraper
-
+from scrapers.propertyfinder_scraper import PropertyFinderScraper
 
 # ── Tasks (one per scraper) ──────────────────────────────────────────────────
 

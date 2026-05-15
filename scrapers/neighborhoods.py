@@ -13,7 +13,6 @@ Usage:
 
 from typing import Optional
 
-
 # ── Canonical mapping: canonical_name → [aliases] ─────────────────────────────
 
 _ALEXANDRIA_DISTRICTS: dict[str, list[str]] = {

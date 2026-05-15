@@ -6,15 +6,15 @@ Handles Supabase connection, listing upserts, embedding generation,
 and hybrid vector + metadata search.
 """
 
-import os
 import logging
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
-from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
-from supabase import create_client, Client
+from supabase import Client, create_client
 
 from scrapers.neighborhoods import normalize_district
 
