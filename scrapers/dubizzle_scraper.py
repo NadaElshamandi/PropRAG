@@ -1,13 +1,13 @@
 """
-elbayt_scraper.py
-------------------
-Scrapes apartments for sale in Alexandria from elbayt.com
+dubizzle_scraper.py
+-------------------
+Scrapes apartments for sale in Alexandria from dubizzle.com.eg
 
 Target URL pattern:
-  https://www.elbayt.com/en/properties/for-sale/alexandria?page=N
+  https://www.dubizzle.com.eg/en/ads/alexandria/apartments-for-sale/?page=N
 
-Elbayt tends to have well-structured, data-rich listings with
-consistent field labeling — good for clean extraction.
+Dubizzle listings are data-rich with consistent field labeling —
+good for clean extraction.
 """
 
 import asyncio
@@ -19,13 +19,13 @@ from playwright.async_api import async_playwright, Page, ElementHandle
 from base_scraper import BaseScraper
 
 
-class ElbaytScraper(BaseScraper):
+class DubizzleScraper(BaseScraper):
 
-    source_name = "elbayt"
+    source_name = "dubizzle"
 
     BASE_SEARCH_URL = (
-        "https://www.elbayt.com/en/properties/for-sale/alexandria"
-        "?property_type=apartment&page={page}"
+        "https://www.dubizzle.com.eg/en/ads/alexandria/"
+        "apartments-for-sale/?page={page}"
     )
 
     MAX_PAGES             = 50
@@ -33,22 +33,23 @@ class ElbaytScraper(BaseScraper):
     DELAY_BETWEEN_DETAILS = 2
 
     # ── CSS selectors ────────────────────────────────────────────────────────
+    # Fallback chains used because Dubizzle occasionally A/B tests class names.
 
-    SEL_CARD           = ".property-card, [class*='PropertyCard'], .listing-item"
-    SEL_CARD_LINK      = "a.property-card__link, a[class*='PropertyCard__link'], a.listing-item__link"
-    SEL_CARD_TITLE     = ".property-card__title, [class*='PropertyCard__title'], h2.listing-title"
-    SEL_CARD_PRICE     = ".property-card__price, [class*='price'], .listing-price"
-    SEL_CARD_BEDS      = "[class*='bed'], [aria-label*='bed']"
-    SEL_CARD_BATHS     = "[class*='bath'], [aria-label*='bath']"
-    SEL_CARD_AREA      = "[class*='area'], [aria-label*='area'], [class*='size']"
-    SEL_CARD_LOCATION  = ".property-card__location, [class*='location'], .listing-location"
+    SEL_CARD           = ".listing-card, [class*='ListingCard'], article[data-testid*='listing']"
+    SEL_CARD_LINK      = "a.listing-card__link, a[class*='ListingCard__link'], a[href*='/ad/']"
+    SEL_CARD_TITLE     = ".listing-card__title, [class*='ListingCard__title'], h2[class*='title']"
+    SEL_CARD_PRICE     = ".listing-card__price, [class*='price'], [data-testid*='price']"
+    SEL_CARD_BEDS      = "[class*='bedroom'], [aria-label*='bedroom'], [data-testid*='bedroom']"
+    SEL_CARD_BATHS     = "[class*='bathroom'], [aria-label*='bathroom'], [data-testid*='bathroom']"
+    SEL_CARD_AREA      = "[class*='area'], [aria-label*='area'], [data-testid*='area']"
+    SEL_CARD_LOCATION  = ".listing-card__location, [class*='location'], [data-testid*='location']"
 
-    SEL_DETAIL_DESC    = ".property-description, [class*='description'], #property-description"
-    SEL_DETAIL_PHONE   = "a[href^='tel:'], [class*='phone'], [class*='contact']"
-    SEL_DETAIL_PHOTOS  = ".property-gallery img, [class*='gallery'] img, .carousel img"
-    SEL_DETAIL_FLOOR   = "[class*='floor'], [data-label='Floor']"
-    SEL_DETAIL_FINISH  = "[class*='finish'], [data-label*='Finish']"
-    SEL_DETAIL_SPECS   = ".property-specs li, [class*='specs'] li, .property-features li"
+    SEL_DETAIL_DESC    = ".listing-description, [class*='description'], [data-testid*='description']"
+    SEL_DETAIL_PHONE   = "a[href^='tel:'], [class*='phone'], [data-testid*='phone']"
+    SEL_DETAIL_PHOTOS  = ".gallery img, [class*='gallery'] img, .carousel img, [data-testid*='gallery'] img"
+    SEL_DETAIL_FLOOR   = "[class*='floor'], [data-label*='floor'], [data-testid*='floor']"
+    SEL_DETAIL_FINISH  = "[class*='finish'], [data-label*='finish'], [data-testid*='finish']"
+    SEL_DETAIL_SPECS   = ".listing-specs li, [class*='specs'] li, [class*='features'] li"
 
     SEL_NEXT_PAGE      = "a[rel='next'], .pagination-next, [aria-label='Next page']"
 
@@ -113,7 +114,7 @@ class ElbaytScraper(BaseScraper):
         if not href:
             return None
 
-        full_url = href if href.startswith("http") else f"https://www.elbayt.com{href}"
+        full_url = href if href.startswith("http") else f"https://www.dubizzle.com.eg{href}"
         external_id = self._extract_id_from_url(full_url)
         if not external_id:
             return None
@@ -183,7 +184,7 @@ class ElbaytScraper(BaseScraper):
         finish_el = await page.query_selector(self.SEL_DETAIL_FINISH)
         result["finishing"] = await self._text(finish_el)
 
-        # Elbayt often lists amenities as bullet points — scan them
+        # Amenities often listed as bullet points — scan them
         spec_els = await page.query_selector_all(self.SEL_DETAIL_SPECS)
         spec_texts = []
         for el in spec_els:
@@ -222,7 +223,7 @@ class ElbaytScraper(BaseScraper):
     @staticmethod
     def _extract_id_from_url(url: str) -> Optional[str]:
         """
-        Elbayt URL pattern: /en/properties/for-sale/alexandria/apartment/slug-12345
+        Dubizzle URL pattern: /en/ads/alexandria/apartments-for-sale/adid-12345/
         """
         match = re.search(r"-(\d{4,12})(?:/|\?|$|#)", url)
         return match.group(1) if match else None
@@ -238,5 +239,5 @@ class ElbaytScraper(BaseScraper):
 # ── Run standalone ───────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    scraper = ElbaytScraper()
+    scraper = DubizzleScraper()
     asyncio.run(scraper.run())

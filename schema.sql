@@ -28,7 +28,7 @@ CREATE TABLE sources (
 INSERT INTO sources (name, base_url, scraper_type) VALUES
     ('propertyfinder', 'https://www.propertyfinder.eg',       'playwright'),
     ('aqarmap',        'https://aqarmap.com.eg',              'playwright'),
-    ('elbayt',         'https://www.elbayt.com',              'playwright'),
+    ('dubizzle',       'https://www.dubizzle.com.eg',       'playwright'),
     ('facebook',       'https://www.facebook.com/marketplace','extension');
 
 

@@ -16,7 +16,7 @@ from datetime import timedelta
 
 from propertyfinder_scraper import PropertyFinderScraper
 from aqarmap_scraper import AqarmapScraper
-from elbayt_scraper import ElbaytScraper
+from dubizzle_scraper import DubizzleScraper
 
 
 # ── Tasks (one per scraper) ──────────────────────────────────────────────────
@@ -39,11 +39,11 @@ async def run_aqarmap():
     return scraper.stats
 
 
-@task(name="scrape-elbayt", retries=2, retry_delay_seconds=60)
-async def run_elbayt():
+@task(name="scrape-dubizzle", retries=2, retry_delay_seconds=60)
+async def run_dubizzle():
     logger = get_run_logger()
-    logger.info("Starting Elbayt scrape...")
-    scraper = ElbaytScraper()
+    logger.info("Starting Dubizzle scrape...")
+    scraper = DubizzleScraper()
     await scraper.run()
     return scraper.stats
 
@@ -61,19 +61,19 @@ async def main_pipeline():
     # Run sequentially to avoid hammering sites simultaneously
     pf_stats  = await run_propertyfinder()
     aq_stats  = await run_aqarmap()
-    el_stats  = await run_elbayt()
+    dz_stats  = await run_dubizzle()
 
     # Summary log
     total_new = (
         pf_stats.get("new_listings", 0)
         + aq_stats.get("new_listings", 0)
-        + el_stats.get("new_listings", 0)
+        + dz_stats.get("new_listings", 0)
     )
     logger.info(f"Pipeline complete. Total new listings this run: {total_new}")
     return {
         "propertyfinder": pf_stats,
         "aqarmap":        aq_stats,
-        "elbayt":         el_stats,
+        "dubizzle":       dz_stats,
         "total_new":      total_new,
     }
 

@@ -8,7 +8,6 @@ lxml==5.2.1                  # fast XML/HTML parser (used by bs4)
 
 # Database
 supabase==2.4.6              # Supabase Python client
-psycopg2-binary==2.9.9       # direct PostgreSQL connection (for embeddings)
 pgvector==0.2.5              # pgvector Python helpers
 
 # AI / Embeddings
