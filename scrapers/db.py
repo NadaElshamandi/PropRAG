@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 from supabase import Client, create_client
 
 from scrapers.neighborhoods import normalize_district
@@ -22,10 +22,21 @@ load_dotenv(Path(__file__).parent / ".env")
 
 logger = logging.getLogger("DBClient")
 
+# ── Singleton embedding model (lazy-loaded once on first use) ────────────────
+_EMBEDDER: Optional[SentenceTransformer] = None
+
+
+def _get_embedder() -> SentenceTransformer:
+    global _EMBEDDER
+    if _EMBEDDER is None:
+        logger.info("Loading embedding model all-MiniLM-L6-v2...")
+        _EMBEDDER = SentenceTransformer("all-MiniLM-L6-v2")
+    return _EMBEDDER
+
 
 class DBClient:
     """
-    Thin wrapper around Supabase + OpenAI for PropRAG operations.
+    Thin wrapper around Supabase + sentence-transformers for PropRAG operations.
 
     Responsibilities:
         - source ↔ UUID resolution
@@ -39,8 +50,6 @@ class DBClient:
             os.environ["SUPABASE_URL"],
             os.environ["SUPABASE_SERVICE_KEY"],
         )
-        openai_key = os.environ.get("OPENAI_API_KEY")
-        self.openai = OpenAI(api_key=openai_key) if openai_key else None
 
     # ── Source helpers ───────────────────────────────────────────────────────
 
@@ -58,18 +67,13 @@ class DBClient:
     # ── Embedding ────────────────────────────────────────────────────────────
 
     def generate_embedding(self, text: str) -> list[float]:
-        """Generate a 1536-dim OpenAI text-embedding-3-small vector."""
-        if not self.openai:
-            logger.warning("OPENAI_API_KEY not set; skipping embedding generation")
-            return []
+        """Generate a 384-dim vector using sentence-transformers."""
         if not text or not text.strip():
             return []
         try:
-            response = self.openai.embeddings.create(
-                model="text-embedding-3-small",
-                input=text.strip()[:8000],  # token limit safety
-            )
-            return response.data[0].embedding
+            model = _get_embedder()
+            embedding = model.encode(text.strip(), convert_to_numpy=True)
+            return embedding.tolist()
         except Exception as e:
             logger.warning(f"Embedding generation failed: {e}")
             return []
@@ -212,8 +216,6 @@ class DBClient:
             .limit(limit)
         )
         if district:
-            # We can't filter on joined columns easily via REST,
-            # so we fetch and filter in Python for the fallback.
             pass
         if min_price is not None:
             q = q.gte("price_egp", min_price)

@@ -70,7 +70,7 @@ CREATE TABLE listings (
     updated_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
 
     -- AI / vector search
-    embedding       vector(1536),                     -- OpenAI text-embedding-3-small dimension
+    embedding       vector(384),                      -- sentence-transformers all-MiniLM-L6-v2
 
     -- Prevent exact duplicates from same source
     UNIQUE (source_id, external_id)
@@ -283,7 +283,7 @@ CREATE POLICY "service role full access" ON user_notes  FOR ALL USING (TRUE);
 -- Hybrid vector + metadata search via pgvector.
 -- Call from Python: supabase.rpc('search_listings', params).execute()
 CREATE OR REPLACE FUNCTION search_listings(
-    query_embedding vector(1536),
+    query_embedding vector(384),
     match_threshold float,
     match_count int,
     filter_district text DEFAULT NULL,
