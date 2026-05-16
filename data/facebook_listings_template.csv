@@ -1,0 +1,4 @@
+title,price_egp,bedrooms,bathrooms,area_sqm,district,neighborhood,listing_url,description,contact_phone,floor,finishing
+"Modern apartment in Smouha",8500000,3,2,160,Smouha,Smouha,https://www.facebook.com/marketplace/item/1234567890/,"Fully finished apartment with sea view in Smouha. 3 bedrooms, 2 bathrooms, 160 sqm. Building has elevator and parking.",01001234567,3,fully finished
+"Cozy studio near Sidi Gaber station",2200000,1,1,55,Sidi Gaber,Sidi Gaber,https://www.facebook.com/marketplace/item/2345678901/,"Small studio perfect for students. Close to tram and supermarkets.",01009876543,2,semi finished
+"Villa with garden in Kafr Abdou",15000000,5,4,350,Kafr Abdou,Kafr Abdou,https://www.facebook.com/marketplace/item/3456789012/,"Standalone villa with private garden and garage. 5 bedrooms, 4 bathrooms.",01005551234,ground,fully finished
