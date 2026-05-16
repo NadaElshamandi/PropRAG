@@ -131,9 +131,19 @@ class DBClient:
                 listing_payload["embedding"] = embedding
 
         # ── Insert listing ─────────────────────────────────────────────────
-        res = self.supabase.table("listings").insert(listing_payload).execute()
+        try:
+            res = self.supabase.table("listings").insert(listing_payload).execute()
+        except Exception as e:
+            logger.error(f"Insert failed for {external_id}: {e}")
+            return None, False
+
+        if not res.data or len(res.data) == 0:
+            logger.error(f"Insert succeeded but no data returned for {external_id}")
+            return None, False
+
         listing_id = res.data[0]["id"]
-        logger.info(f"  ✓ Saved new listing: {data.get('title', '')[:60]}")
+        title_preview = (data.get("title") or "")[:60]
+        logger.info(f"  ✓ Saved new listing: {title_preview}")
 
         # ── Insert related rows ──────────────────────────────────────────
         location = data.get("location", {})

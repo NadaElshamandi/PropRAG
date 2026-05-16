@@ -16,7 +16,7 @@ import asyncio
 import re
 from typing import Optional
 
-from playwright.async_api import ElementHandle, Page, async_playwright
+from playwright.async_api import BrowserContext, ElementHandle, Page, async_playwright
 
 from scrapers.base_scraper import BaseScraper
 
@@ -76,7 +76,7 @@ class PropertyFinderScraper(BaseScraper):
 
                     for card in cards:
                         try:
-                            listing_data = await self._process_card(page, card)
+                            listing_data = await self._process_card(context, card)
                             if listing_data:
                                 self._upsert_listing(listing_data)
                         except Exception as e:
@@ -110,10 +110,12 @@ class PropertyFinderScraper(BaseScraper):
 
     # ── Card processing ──────────────────────────────────────────────────────
 
-    async def _process_card(self, browser_page: Page, card: ElementHandle) -> Optional[dict]:
+    async def _process_card(
+        self, context: BrowserContext, card: ElementHandle
+    ) -> Optional[dict]:
         """
         Extract summary data from a listing card, then visit the detail page
-        for full data. Returns a dict ready for _upsert_listing().
+        (in a new tab) for full data. Returns a dict ready for _upsert_listing().
         """
         # Extract the listing URL and external ID from the card
         link_el = await card.query_selector(self.SEL_CARD_LINK)
@@ -141,6 +143,9 @@ class PropertyFinderScraper(BaseScraper):
         location_el = await card.query_selector(self.SEL_CARD_LOCATION)
 
         title    = await self._text(title_el)
+        # Fallback: title may be in the link's title attribute
+        if not title and link_el:
+            title = await link_el.get_attribute("title")
         price    = self._clean_price(await self._text(price_el))
         beds     = self._clean_int(await self._text(beds_el))
         baths    = self._clean_int(await self._text(baths_el))
@@ -152,8 +157,8 @@ class PropertyFinderScraper(BaseScraper):
         neighborhood = location_parts[0] if len(location_parts) > 0 else None
         district     = location_parts[1] if len(location_parts) > 1 else None
 
-        # Visit detail page for description, photos, contact
-        detail = await self._scrape_detail_page(browser_page, full_url)
+        # Visit detail page (new tab) for description, photos, contact
+        detail = await self._scrape_detail_page(context, full_url)
 
         return {
             "external_id":   external_id,
@@ -178,14 +183,16 @@ class PropertyFinderScraper(BaseScraper):
 
     # ── Detail page scraping ─────────────────────────────────────────────────
 
-    async def _scrape_detail_page(self, page: Page, url: str) -> dict:
-        """Visit the individual listing page and extract full details."""
+    async def _scrape_detail_page(self, context: BrowserContext, url: str) -> dict:
+        """Open a new tab, visit the detail page, extract data, close tab."""
         await asyncio.sleep(self.DELAY_BETWEEN_DETAILS)
+        page = await context.new_page()
 
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         except Exception as e:
             self.logger.warning(f"Detail page failed: {url} — {e}")
+            await page.close()
             return {}
 
         result = {}
@@ -223,6 +230,7 @@ class PropertyFinderScraper(BaseScraper):
                 contacts.append({"phone": phone, "type": "unknown"})
         result["contacts"] = contacts
 
+        await page.close()
         return result
 
     # ── Utility helpers ──────────────────────────────────────────────────────

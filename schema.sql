@@ -306,13 +306,13 @@ BEGIN
     RETURN QUERY
     SELECT
         l.id,
-        l.title,
+        l.title::text,
         l.description,
         l.price_egp,
         l.area_sqm,
         l.bedrooms,
         l.bathrooms,
-        loc.district,
+        loc.district::text,
         1 - (l.embedding <=> query_embedding) AS similarity
     FROM listings l
     LEFT JOIN locations loc ON loc.listing_id = l.id
