@@ -124,9 +124,34 @@ class DBClient:
         listing_payload["last_seen_at"] = now
 
         # Generate embedding for new listings
+        # Use description if available; otherwise composite title + specs
         desc = listing_payload.get("description", "")
+        title = listing_payload.get("title", "")
         if desc:
-            embedding = self.generate_embedding(desc)
+            embed_text = desc
+        elif title:
+            embed_text = title
+        else:
+            embed_text = ""
+
+        if embed_text:
+            # Enrich with structured specs for better semantic signal
+            specs = []
+            if listing_payload.get("bedrooms"):
+                specs.append(f"{listing_payload['bedrooms']} bedrooms")
+            if listing_payload.get("bathrooms"):
+                specs.append(f"{listing_payload['bathrooms']} bathrooms")
+            if listing_payload.get("area_sqm"):
+                specs.append(f"{listing_payload['area_sqm']} sqm")
+            if listing_payload.get("price_egp"):
+                specs.append(f"EGP {listing_payload['price_egp']}")
+            if data.get("location", {}).get("district"):
+                specs.append(data["location"]["district"])
+
+            if specs:
+                embed_text += f". {' '.join(specs)}."
+
+            embedding = self.generate_embedding(embed_text)
             if embedding:
                 listing_payload["embedding"] = embedding
 
@@ -198,7 +223,7 @@ class DBClient:
 
         params = {
             "query_embedding": embedding,
-            "match_threshold": 0.7,
+            "match_threshold": 0.55,
             "match_count": limit,
             "filter_district": normalize_district(district) if district else None,
             "min_price": min_price,

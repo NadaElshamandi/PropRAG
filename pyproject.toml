@@ -16,6 +16,11 @@ dependencies = [
     "tenacity>=8.3.0",
 ]
 
+[project.scripts]
+# Note: Run via `uv run python -m scrapers.query` from project root
+# Direct entry point may fail due to package path resolution in venv
+proprag-query = "scrapers.query:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
