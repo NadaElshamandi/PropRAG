@@ -27,6 +27,7 @@ CREATE TABLE sources (
 -- Seed the four sources right away
 INSERT INTO sources (name, base_url, scraper_type) VALUES
     ('propertyfinder', 'https://www.propertyfinder.eg',       'playwright'),
+    ('bayut',          'https://www.bayut.eg',                'api'),
     ('aqarmap',        'https://aqarmap.com.eg',              'playwright'),
     ('dubizzle',       'https://www.dubizzle.com.eg',       'playwright'),
     ('facebook',       'https://www.facebook.com/marketplace','extension');
